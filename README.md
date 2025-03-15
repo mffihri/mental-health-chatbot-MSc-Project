@@ -59,7 +59,10 @@ pip install -r requirements.txt
 
 4. Install Ollama and pull the LLaMA2 model:
 - Download Ollama from [ollama.ai](https://ollama.ai)
-- Run: `ollama pull llama2`
+- Run:
+```bash
+ollama pull llama2
+```
 
 ## Usage
 
@@ -69,26 +72,27 @@ python app.py
 ```
 
 2. Open your browser and navigate to:
-```
+```bash
 http://localhost:5000
 ```
 
 3. Start chatting with the bot and provide feedback on responses
 
 4. View feedback statistics at:
-```
+```bash
 http://localhost:5000/reviews
 ```
 
 ## Project Structure
 
 ```
-mental-health-chatbot/
+mental-health-chatbot-MSc-Project/
 ├── app.py                 # Main Flask application
 ├── requirements.txt       # Python dependencies
 ├── templates/
 │   ├── index.html        # Chat interface
 │   └── reviews.html      # Feedback review page
+├── LICENSE               # MIT License
 └── README.md             # Project documentation
 ```
 
