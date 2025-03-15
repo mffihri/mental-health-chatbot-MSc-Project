@@ -41,8 +41,8 @@ An adaptive mental health support chatbot built with Flask and Ollama's LLaMA2 m
 
 1. Clone the repository:
 ```bash
-git clone [your-repo-url]
-cd mental-health-chatbot
+git clone https://github.com/mffihri/mental-health-chatbot-MSc-Project.git
+cd mental-health-chatbot-MSc-Project
 ```
 
 2. Create and activate a virtual environment:
