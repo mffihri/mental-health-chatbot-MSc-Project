@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feedback Reviews - Mental Health Support Chat</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f4f8;
+            color: #2d3748;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        .header h1 {
+            color: #4a5568;
+            margin: 0;
+        }
+        .header p {
+            color: #718096;
+            margin: 10px 0 0;
+        }
+        .nav-link {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #4299e1;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            margin-top: 15px;
+            transition: background-color 0.2s;
+        }
+        .nav-link:hover {
+            background-color: #3182ce;
+        }
+        .review-card {
+            background-color: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .review-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .timestamp {
+            color: #718096;
+            font-size: 0.9em;
+        }
+        .rating {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .rating-label {
+            color: #4a5568;
+            font-weight: 500;
+        }
+        .rating-value {
+            background-color: #4299e1;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-weight: bold;
+        }
+        .conversation {
+            margin-top: 15px;
+        }
+        .message {
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+        .message-label {
+            font-weight: 500;
+            color: #4a5568;
+            margin-bottom: 5px;
+        }
+        .message-content {
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .user-message .message-content {
+            background-color: #ebf4ff;
+            color: #2c5282;
+        }
+        .bot-message .message-content {
+            background-color: #f0fff4;
+            color: #276749;
+        }
+        .no-reviews {
+            text-align: center;
+            padding: 40px;
+            color: #718096;
+            font-size: 1.1em;
+        }
+        .stats-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background-color: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 15px;
+            margin-right: 20px;
+            width: 150px;
+            text-align: center;
+        }
+        .stat-label {
+            color: #718096;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+        .stat-value {
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Feedback Reviews</h1>
+            <p>Review and analyze chatbot performance based on user feedback</p>
+            {% if stats.total_reviews > 0 %}
+            <div class="stats-container">
+                <div class="stat-card">
+                    <div class="stat-label">Average Rating</div>
+                    <div class="stat-value">{{ stats.average_rating }}/5</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total Reviews</div>
+                    <div class="stat-value">{{ stats.total_reviews }}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">High Ratings (4-5)</div>
+                    <div class="stat-value">{{ stats.high_ratings }}</div>
+                </div>
+            </div>
+            {% endif %}
+            <a href="/" class="nav-link">Back to Chat</a>
+        </div>
+
+        {% if conversations %}
+            {% for conv in conversations %}
+            <div class="review-card">
+                <div class="review-header">
+                    <div class="timestamp">{{ conv.timestamp }}</div>
+                    <div class="rating">
+                        <span class="rating-label">Emotional Understanding Score:</span>
+                        <span class="rating-value">{{ conv.feedback }}/5</span>
+                    </div>
+                </div>
+                <div class="conversation">
+                    <div class="message user-message">
+                        <div class="message-label">User Message:</div>
+                        <div class="message-content">{{ conv.user_message }}</div>
+                    </div>
+                    <div class="message bot-message">
+                        <div class="message-label">Bot Response:</div>
+                        <div class="message-content">{{ conv.bot_response }}</div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="no-reviews">
+                <p>No feedback has been submitted yet. Start a conversation and provide feedback to see reviews here.</p>
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>
