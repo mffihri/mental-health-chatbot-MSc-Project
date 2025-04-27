@@ -1,6 +1,15 @@
 """
 Clinical Conversational Flow Module for Mental Health Chatbot
 """
+import re
+from datetime import datetime
+
+try:
+    from ollama_handler import send_prompt_to_ollama
+except ImportError:
+    # Fallback if ollama_handler is not available
+    def send_prompt_to_ollama(prompt, **kwargs):
+        return None
 
 # Structured conversation flow for clinical assessment
 CLINICAL_QUESTIONS = [
@@ -151,7 +160,7 @@ def generate_clinical_summary(timeline_data):
     # Organize entries by category
     categories = {}
     for entry in timeline_data['entries']:
-        category = entry.get('category')
+        category = entry.get('category', 'uncategorized')
         if category not in categories:
             categories[category] = []
         categories[category].append(entry)
@@ -163,7 +172,7 @@ def generate_clinical_summary(timeline_data):
     for category_name, entries in categories.items():
         if entries:
             # Format the category name for display
-            formatted_category = category_name.replace('_', ' ').title()
+            formatted_category = category_name.replace('_', ' ').title() if category_name else "Uncategorized"
             summary += f"{formatted_category}:\n"
             
             # Add each entry in the category
@@ -186,3 +195,65 @@ def generate_clinical_summary(timeline_data):
         summary += "- Leverage identified strengths in treatment planning\n"
     
     return summary
+
+# Function to generate an AI-enhanced clinical report using the timeline data and Ollama API
+def generate_ai_enhanced_report(timeline_data):
+    """
+    Generate an AI-enhanced clinical report using the timeline data and Ollama API.
+    
+    Args:
+        timeline_data (dict): The timeline data collected during the conversation
+        
+    Returns:
+        str: An AI-enhanced clinical summary
+    """
+    # First generate a basic summary using our existing function
+    basic_summary = generate_clinical_summary(timeline_data)
+    
+    # If we couldn't import the ollama handler, return the basic summary
+    if send_prompt_to_ollama == None:
+        return basic_summary
+    
+    # Extract all user responses for context
+    all_responses = ""
+    if 'entries' in timeline_data and timeline_data['entries']:
+        for entry in timeline_data['entries']:
+            question = entry.get('question', '')
+            response = entry.get('response', '')
+            category = entry.get('category', 'general')
+            all_responses += f"Question about {category}: {question}\nResponse: {response}\n\n"
+    
+    # Create a prompt for the AI
+    prompt = f"""You are a professional mental health clinician reviewing a client's assessment responses.
+Based on the following client responses and initial assessment, generate an insightful clinical report.
+Please focus on identifying patterns, strengths, areas of concern, and potential directions for support.
+
+CLIENT RESPONSES:
+{all_responses}
+
+INITIAL ASSESSMENT:
+{basic_summary}
+
+Please enhance this assessment with your professional insights. Format the report using markdown with 
+clear sections. Include:
+1. Summary of presenting concerns
+2. Notable patterns observed
+3. Strengths and resources identified
+4. Suggested focus areas
+5. Recommendations for support
+
+The report should be insightful but avoid definitive diagnoses. Use professional but compassionate language.
+"""
+    
+    # Get enhanced report from Ollama
+    enhanced_report = send_prompt_to_ollama(prompt, model="deepseek-r1:1.5b", temperature=0.3)
+    
+    if enhanced_report and len(enhanced_report) > 100:
+        # Add a disclaimer to the AI-generated report
+        disclaimer = "\n\n---\n\n*This assessment was generated with AI assistance based on the information provided. " \
+                    "It is not a clinical diagnosis and should be used for informational purposes only. " \
+                    "Please consult with a qualified mental health professional for proper assessment and treatment recommendations.*"
+        return enhanced_report + disclaimer
+    else:
+        # If the AI enhancement failed, return the basic summary
+        return basic_summary

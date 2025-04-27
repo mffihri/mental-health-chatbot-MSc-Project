@@ -7,7 +7,8 @@ from collections import defaultdict
 import statistics
 import re
 import json
-from clinical_flow import get_next_question, process_response, generate_clinical_summary
+from clinical_flow import get_next_question, process_response, generate_clinical_summary, generate_ai_enhanced_report
+from ollama_handler import send_prompt_to_ollama, create_mental_health_prompt
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24)
@@ -113,49 +114,17 @@ def chat():
     if user_state['current_question_index'] < 8:
         bot_response = question_data['text']
     else:
-        # After the clinical flow, use the AI model for responses
-        system_prompt = get_adaptive_prompt(user_message)
-        full_prompt = f"""You are a compassionate and trauma-informed mental health AI assistant designed to support users while integrating clinical psychology data. Your role is to help users process their emotions, provide evidence-based coping strategies, and recognize trauma-related patterns while ensuring ethical and sensitive interactions. Your core functions include:
-
-Clinical Data Integration:
-- Utilize anonymized psychological data to generate user conversation histories or timelines in compliance with GDPR.
-- Offer structured insights into mental health progress while maintaining strict confidentiality.
-
-Trauma and Risk Detection:
-- Identify signs of adverse childhood experiences (ACEs), trauma, heightened suicide risk, and substance abuse.
-- Provide non-intrusive, supportive prompts to encourage users to seek professional help when necessary.
-- Offer clinicians structured summaries of risks without making definitive diagnoses.
-
-Trauma-Informed Care:
-- Approach users with empathy, recognizing the impact of past trauma on present behavior.
-- Offer guidance on physical health, integrated mental health services, and pharmacological interventions where appropriate.
-- Provide practical coping mechanisms grounded in Cognitive Behavioral Therapy (CBT), Dialectical Behavior Therapy (DBT), and mindfulness techniques.
-
-Ethical and User-Centered Approach:
-- Prioritize user safety by following crisis intervention protocols.
-- Encourage professional consultation for severe mental health concerns.
-- Ensure users feel heard and respected, reinforcing autonomy in their healing journey.
-
-Your responses should be warm, evidence-based, and adaptable to different emotional states. Always validate the user's feelings and guide them toward self-reflection and professional resources where necessary.
-
-Respond with empathy and understanding to the following message: {user_message}"""
+        # For regular chat outside the clinical flow, use Ollama API
+        # Create an adaptive prompt based on feedback patterns
+        adaptive_prompt = get_adaptive_prompt(user_message)
         
-        # Ollama API call with DeepSeek-R1 1.5B model
-        response = requests.post('http://localhost:11434/api/generate',
-                               json={
-                                   "model": "deepseek-r1:1.5b",
-                                   "prompt": full_prompt,
-                                   "stream": False
-                               })
+        # Use our new ollama_handler module to get the response
+        full_prompt = create_mental_health_prompt(user_message, system_prompt=adaptive_prompt)
+        bot_response = send_prompt_to_ollama(full_prompt, model="deepseek-r1:1.5b")
         
-        if response.status_code == 200:
-            bot_response = response.json().get('response', '')
-            
-            # Remove content between <think> and </think> tags
-            bot_response = re.sub(r'<think>.*?</think>', '', bot_response, flags=re.DOTALL)
-            bot_response = bot_response.strip()
-        else:
-            bot_response = "I apologize, but I encountered an error. Please try again."
+        if not bot_response or bot_response.startswith("I apologize"):
+            # Fallback if Ollama returns error
+            bot_response = "I'm here to support you. How are you feeling today? (Note: There might be a connection issue with the response service)"
     
     # Store conversation
     conversations.append({
@@ -199,9 +168,11 @@ def feedback():
 def view_timeline():
     username = request.args.get('username', 'anonymous')
     
-    # Generate clinical summary from the timeline
+    # Get user's timeline data
     user_timeline = user_timelines.get(username, {'entries': []})
-    clinical_summary = generate_clinical_summary(user_timeline)
+    
+    # Generate AI-enhanced clinical report from the timeline
+    clinical_summary = generate_ai_enhanced_report(user_timeline)
     
     return render_template('timeline.html', 
                           timeline=user_timeline,
@@ -215,15 +186,23 @@ def reviews():
     if rated_conversations:
         avg_rating = sum(conv['feedback'] for conv in rated_conversations) / len(rated_conversations)
         rating_distribution = {i: len([conv for conv in rated_conversations if conv['feedback'] == i]) for i in range(1, 6)}
+        high_ratings = sum(rating_distribution.get(i, 0) for i in [4, 5])
     else:
         avg_rating = 0
         rating_distribution = {i: 0 for i in range(1, 6)}
+        high_ratings = 0
+    
+    # Create stats object as expected by the template
+    stats = {
+        'total_reviews': len(rated_conversations),
+        'average_rating': round(avg_rating, 2),
+        'high_ratings': high_ratings
+    }
     
     return render_template('reviews.html', 
-                         total_ratings=len(rated_conversations),
-                         avg_rating=round(avg_rating, 2),
-                         rating_distribution=rating_distribution,
-                         conversations=rated_conversations)
+                          stats=stats,
+                          rating_distribution=rating_distribution,
+                          conversations=rated_conversations)
 
 if __name__ == '__main__':
     app.run(debug=True)
