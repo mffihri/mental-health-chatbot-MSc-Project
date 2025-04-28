@@ -1,34 +1,20 @@
-# Mental Health Support Chatbot
+# RAG-Enhanced Mental Health Chatbot
 
-An adaptive mental health support chatbot built with Flask and Ollama's LLaMA2 model. The chatbot learns from user feedback to provide more empathetic and effective responses over time.
+A mental health support chatbot built with Flask and Ollama, enhanced by Retrieval Augmented Generation (RAG) for more informed and supportive responses.
 
 ## Features
 
-### 1. Adaptive Learning System
-- Learns from highly-rated responses (4-5 stars)
-- Incorporates successful conversation patterns into future interactions
-- Continuously improves response quality based on user feedback
-- Maintains a database of effective response patterns
-
-### 2. Interactive Chat Interface
-- Clean, modern UI design
-- Real-time response generation
-- Two-step feedback system
-- Visual feedback for user interactions
-- Support for crisis situations with emergency contact information
-
-### 3. Feedback and Reviews System
-- Rate bot responses on emotional understanding (1-5 scale)
-- Two-step feedback submission process
-- Dedicated reviews page with statistics
-- Track average ratings and high-performing responses
-- Historical conversation view with ratings
+- Real-time chat interface with modern UI
+- RAG-powered responses using a curated mental health knowledge base
+- Feedback and reviews system for user experience
+- API documented in `API_REFERENCE.md`
 
 ## Technology Stack
 
 - **Backend**: Flask (Python)
 - **Frontend**: HTML/CSS/JavaScript
 - **AI Model**: LLaMA2 via Ollama
+- **RAG & Embeddings**: LangChain, sentence-transformers, scikit-learn, numpy, pytorch
 - **Dependencies**: See requirements.txt
 
 ## Prerequisites
@@ -36,6 +22,7 @@ An adaptive mental health support chatbot built with Flask and Ollama's LLaMA2 m
 1. Python 3.x
 2. Ollama installed with LLaMA2 model
 3. Git (for version control)
+4. RAG dependencies (see requirements.txt)
 
 ## Installation
 
@@ -64,6 +51,8 @@ pip install -r requirements.txt
 ollama pull llama2
 ```
 
+5. For RAG: Ensure all dependencies in requirements.txt are installed (including sentence-transformers, scikit-learn, numpy, torch, langchain)
+
 ## Usage
 
 1. Start the Flask server:
@@ -83,41 +72,26 @@ http://localhost:5000
 http://localhost:5000/reviews
 ```
 
+## API Reference
+
+A comprehensive API reference is available in [API_REFERENCE.md](./API_REFERENCE.md).
+
 ## Project Structure
 
 ```
 mental-health-chatbot-MSc-Project/
 ├── app.py                 # Main Flask application
 ├── requirements.txt       # Python dependencies
+├── rag_handler.py         # RAG logic
+├── mental_health_kb.py    # Knowledge base
 ├── templates/
 │   ├── index.html        # Chat interface
 │   └── reviews.html      # Feedback review page
 ├── LICENSE               # MIT License
-└── README.md             # Project documentation
+├── README.md             # Project documentation
+├── API_REFERENCE.md      # API documentation
+└── ...
 ```
-
-## Features in Detail
-
-### Adaptive Learning
-The chatbot uses a sophisticated learning system that:
-- Stores successful conversation patterns
-- Tracks average ratings for different response types
-- Incorporates highly-rated responses into future prompts
-- Adapts its communication style based on user feedback
-
-### Feedback System
-Users can:
-- Rate how well the bot understood their emotional state
-- Preview their rating before submission
-- Submit feedback with a dedicated button
-- View all feedback and statistics on the reviews page
-
-### Reviews Dashboard
-Provides:
-- Average rating across all conversations
-- Total number of reviews
-- Count of high ratings (4-5 stars)
-- Detailed conversation history with ratings
 
 ## Contributing
 
