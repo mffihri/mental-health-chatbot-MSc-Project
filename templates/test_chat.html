@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Chat Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .chat-container {
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .message {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .user-message {
+            background-color: #e6f7ff;
+            text-align: right;
+        }
+        .bot-message {
+            background-color: #f1f1f1;
+        }
+        .input-area {
+            display: flex;
+            margin-top: 20px;
+        }
+        input {
+            flex-grow: 1;
+            padding: 10px;
+            margin-right: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .response-time {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 5px;
+            display: block;
+        }
+        .rag-info {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 3px;
+            display: block;
+        }
+        .rag-used {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        .rag-not-used {
+            color: #888;
+        }
+        #loading {
+            display: none;
+            color: #666;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <h1>Simple Chat Test</h1>
+    <p>This page tests a direct connection to Ollama with minimal complexity.</p>
+    
+    <div class="chat-container" id="chat-container">
+        <!-- Messages will appear here -->
+    </div>
+    
+    <div id="loading">Thinking...</div>
+    
+    <div class="input-area">
+        <input type="text" id="user-input" placeholder="Type a message...">
+        <button id="send-button">Send</button>
+    </div>
+
+    <script>
+        const chatContainer = document.getElementById('chat-container');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+        const loading = document.getElementById('loading');
+
+        // Function to add a message to the chat container
+        function addMessage(text, sender, responseTime = null, ragUsed = null) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}-message`;
+            messageDiv.textContent = text;
+            
+            if (responseTime !== null) {
+                const timeDiv = document.createElement('div');
+                timeDiv.className = 'response-time';
+                timeDiv.textContent = `Response time: ${responseTime}ms`;
+                messageDiv.appendChild(timeDiv);
+            }
+            
+            if (ragUsed !== null) {
+                const ragDiv = document.createElement('div');
+                ragDiv.className = ragUsed ? 'rag-info rag-used' : 'rag-info rag-not-used';
+                ragDiv.textContent = ragUsed ? 'Knowledge base used ✓' : 'Standard response';
+                messageDiv.appendChild(ragDiv);
+            }
+            
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // Function to send a message
+        async function sendMessage() {
+            const message = userInput.value.trim();
+            if (!message) return;
+            
+            // Add user message to chat
+            addMessage(message, 'user');
+            
+            // Clear input
+            userInput.value = '';
+            
+            // Show loading indicator
+            loading.style.display = 'block';
+            
+            try {
+                // Send message to the simplified chat endpoint
+                const response = await fetch('/simple_chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: message })
+                });
+                
+                const data = await response.json();
+                
+                // Hide loading indicator
+                loading.style.display = 'none';
+                
+                if (response.ok) {
+                    // Add bot response to chat
+                    addMessage(data.response, 'bot', data.response_time_ms, data.rag_used);
+                } else {
+                    // Add error message to chat
+                    addMessage('An error occurred. Please try again.', 'bot');
+                }
+            } catch (error) {
+                // Hide loading indicator
+                loading.style.display = 'none';
+                
+                // Add error message to chat
+                addMessage(`Error: ${error.message}`, 'bot');
+            }
+        }
+
+        // Event listeners
+        sendButton.addEventListener('click', sendMessage);
+        userInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>

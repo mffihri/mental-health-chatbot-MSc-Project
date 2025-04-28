@@ -156,6 +156,26 @@
             font-size: 0.9em;
             text-align: center;
         }
+        .message-content {
+            margin-bottom: 5px;
+        }
+        .message-info {
+            font-size: 0.8em;
+            color: #718096;
+        }
+        .timestamp {
+            margin-right: 5px;
+        }
+        .response-time {
+            display: block;
+            font-size: 0.8em;
+            color: #4a5568;
+            margin-top: 8px;
+            margin-bottom: 8px;
+            font-style: italic;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 6px;
+        }
     </style>
 </head>
 <body>
@@ -182,6 +202,7 @@
         const loading = document.getElementById('loading');
         let currentConversationId = null;
         let selectedRating = null;
+        let lastResponseTime = null;
 
         userInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
@@ -290,6 +311,7 @@
             loading.style.display = 'block';
 
             try {
+                const startTime = performance.now();
                 const response = await fetch('/chat', {
                     method: 'POST',
                     headers: {
@@ -297,12 +319,34 @@
                     },
                     body: JSON.stringify({ message })
                 });
+                const endTime = performance.now();
+                lastResponseTime = endTime - startTime;
 
                 const data = await response.json();
                 if (response.ok) {
+                    console.log("Response time from server:", data.response_time_ms + "ms");
                     const botMessageDiv = addMessage(data.response, 'bot');
                     currentConversationId = data.conversation_id;
-                    createFeedbackContainer(botMessageDiv, currentConversationId);
+                    
+                    // Add response time and RAG usage info to bot message directly
+                    if (data.response_time_ms || data.rag_used !== undefined) {
+                        const responseInfoEl = document.createElement('div');
+                        responseInfoEl.className = 'response-time';
+                        
+                        // Only display response time, removed RAG usage indicator
+                        if (data.response_time_ms) {
+                            responseInfoEl.textContent = `Response time: ${data.response_time_ms}ms`;
+                        }
+                        
+                        botMessageDiv.appendChild(responseInfoEl);
+                    }
+                    
+                    // Only add feedback for non-clinical flow messages
+                    if (!data.in_clinical_flow) {
+                        createFeedbackContainer(botMessageDiv, currentConversationId);
+                    }
+                    
+                    window.lastResponseTime = data.response_time_ms;
                 } else {
                     addMessage('I apologize, but I encountered an error. Please try again.', 'bot');
                 }
@@ -317,7 +361,15 @@
         function addMessage(text, sender) {
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${sender}-message`;
-            messageDiv.textContent = text;
+            
+            // Create content container
+            const contentContainer = document.createElement('div');
+            contentContainer.className = 'message-content';
+            
+            // Add the main text content
+            contentContainer.innerHTML = text;
+            
+            messageDiv.appendChild(contentContainer);
             messagesContainer.appendChild(messageDiv);
             return messageDiv;
         }
